@@ -1,14 +1,38 @@
 # -*- coding: utf-8 -*-
 
-import click
+"""relascope inventories a forest of directory trees."""
 
 
-@click.command()
-def main(args=None):
-    """Console script for relascope"""
-    click.echo("Replace this message by putting your code into "
-               "relascope.cli.main")
-    click.echo("See click documentation at http://click.pocoo.org/")
+import argparse
+import logging
+
+
+logger = logging.getLogger(__name__)  # used if file imported as module
+
+
+def main():
+    args = parse_args()
+    config_logging(args)
+    run(args)
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('-v', '--verbose', action='store_true')
+    args = parser.parse_args()
+    return args
+
+
+def config_logging(args):
+    global logger
+    level = logging.DEBUG if args.verbose else logging.INFO
+    logging.basicConfig(level=level)
+    logger = logging.getLogger('relascope')
+
+
+def run(args):
+    logger.debug('args: %r', vars(args))
+    pass  # TODO
 
 
 if __name__ == "__main__":
