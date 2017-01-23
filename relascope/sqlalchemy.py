@@ -51,6 +51,8 @@ class SqlABackend(object):
             self._engine.execute("""
                 create view dirs as
                 select
+                    num_blocks / 2147483648 as tb,
+                    num_blocks / 2097152 as gb,
                     path,
                     parent,
                     datetime(max_atime, 'unixepoch') as max_atime,
