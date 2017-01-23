@@ -33,10 +33,10 @@ def parse_args():
 
 
 def config_logging(args):
-    global logger
     level = logging.DEBUG if args.verbose else logging.INFO
-    logging.basicConfig(level=level)
-    logger = logging.getLogger('relascope')
+    logging.basicConfig(level=level,
+                        datefmt='%Y-%m-%d %H:%M:%S',
+                        format='%(asctime)s %(levelname)-8s %(message)s')
 
 
 def run(args):
