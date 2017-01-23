@@ -46,13 +46,11 @@ def run(args):
     for root_dir in root_dirs:
         assert os.path.isdir(root_dir), root_dir
     backend = SqlABackend('sqlite:///' + db_path)
+    logger.info('starting')
     for root_dir in root_dirs:
         backend.delete_tree(root_dir)
         backend.add_tree(root_dir)
-    for d in backend.query():
-        print('{}\t{}\t{}\t{}'.format(
-            d.num_blocks, d.num_multi_links, d.path, d.parent
-        ))
+    logger.info('finished')
 
 
 if __name__ == "__main__":
