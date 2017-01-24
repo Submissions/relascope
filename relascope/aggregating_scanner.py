@@ -5,6 +5,21 @@ cumulative statistics for each directory."""
 import os
 
 
+# The properties of a directory excluding its location (path & parent):
+ATTRIBUTES = (
+    ('max_atime', -1),
+    ('max_ctime', -1),
+    ('max_mtime', -1),
+    ('num_blocks', 0),
+    ('num_bytes', 0),
+    ('num_files', 0),
+    ('num_dirs', 0),
+    ('num_symlinks', 0),
+    ('num_specials', 0),
+    ('num_multi_links', 0),
+)
+
+
 def scan(path, parent=None):
     """Recursively scan a directory depth-first, generating Directory
     instances."""
@@ -31,16 +46,8 @@ class Directory:
         self.clear()
 
     def clear(self):
-        self.max_atime = -1
-        self.max_ctime = -1
-        self.max_mtime = -1
-        self.num_blocks = 0
-        self.num_bytes = 0
-        self.num_files = 0
-        self.num_dirs = 0
-        self.num_symlinks = 0
-        self.num_specials = 0
-        self.num_multi_links = 0
+        for name, default in ATTRIBUTES:
+            setattr(self, name, default)
 
     def __repr__(self):
         return 'Directory(path=%r)' % (self.path)

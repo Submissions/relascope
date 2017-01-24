@@ -8,7 +8,7 @@ from sqlalchemy import MetaData, Table, Column, Integer, String, create_engine
 from sqlalchemy.orm import mapper, sessionmaker
 from sqlalchemy.engine import reflection
 
-from .aggregating_scanner import scan, Directory
+from .aggregating_scanner import scan, Directory, ATTRIBUTES
 
 
 DEFAULT_BATCH_SIZE = 1000
@@ -28,20 +28,15 @@ class SqlABackend(object):
         self._session = self.Session()
 
     def _define_schema(self):
+        attributes = [
+            Column(name, Integer, default=default)
+            for name, default in ATTRIBUTES
+        ]
         self._directories = Table(
             'directories', self._metadata,
             Column('path', String, primary_key=True),
             Column('parent', String, index=True),
-            Column('max_atime', Integer, default=0),
-            Column('max_ctime', Integer, default=0),
-            Column('max_mtime', Integer, default=0),
-            Column('num_blocks', Integer, default=0),
-            Column('num_bytes', Integer, default=0),
-            Column('num_files', Integer, default=0),
-            Column('num_dirs', Integer, default=0),
-            Column('num_symlinks', Integer, default=0),
-            Column('num_specials', Integer, default=0),
-            Column('num_multi_links', Integer, default=0)
+            *attributes
         )
         self._directory_mapper = mapper(Directory, self._directories)
 
