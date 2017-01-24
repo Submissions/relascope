@@ -11,7 +11,7 @@ from sqlalchemy.engine import reflection
 from .aggregating_scanner import scan, Directory
 
 
-DEFAULT_BATCH_SIZE = 5
+DEFAULT_BATCH_SIZE = 1000
 
 
 class SqlABackend(object):
