@@ -20,20 +20,6 @@ ATTRIBUTES = (
 )
 
 
-def scan(path, parent=None):
-    """Recursively scan a directory depth-first, generating Directory
-    instances."""
-    result = Directory(path, parent)
-    for entry in os.scandir(path):
-        result.add_dir_entry(entry)
-        if entry.is_dir(follow_symlinks=False):
-            for child_directory in scan(entry.path, path):
-                if child_directory.parent == path:
-                    result.add_child_directory(child_directory)
-                yield child_directory
-    yield result
-
-
 class Directory:
     def __init__(self, path, parent=None):
         self.path = path
@@ -51,6 +37,18 @@ class Directory:
 
     def __repr__(self):
         return 'Directory(path=%r)' % (self.path)
+
+    def scan(self):
+        """Recursively scan this directory depth-first, updating totals and
+        generating Directory instances yielding self last."""
+        self.clear()
+        for entry in os.scandir(self.path):
+            self.add_dir_entry(entry)
+            if entry.is_dir(follow_symlinks=False):
+                child_directory = Directory(entry.path, self.path)
+                yield from child_directory.scan()
+                self.add_child_directory(child_directory)
+        yield self
 
     def add_local_contents(self):
         """Refresh to only the local contents of this directory. Does not scan

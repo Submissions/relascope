@@ -8,7 +8,7 @@ from sqlalchemy import MetaData, Table, Column, Integer, String, create_engine
 from sqlalchemy.orm import mapper, sessionmaker
 from sqlalchemy.engine import reflection
 
-from .aggregating_scanner import scan, Directory, ATTRIBUTES
+from .aggregating_scanner import Directory, ATTRIBUTES
 
 
 DEFAULT_BATCH_SIZE = 1000
@@ -71,7 +71,7 @@ class SqlABackend(object):
             self._engine.execute('drop table directories')
 
     def add_tree(self, top, batch_size=DEFAULT_BATCH_SIZE):
-        gen = scan(top)
+        gen = Directory(top).scan()
         try:
             while True:
                 batch = list(islice(gen, batch_size))
