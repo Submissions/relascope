@@ -63,9 +63,9 @@ class Directory:
 
     def add_dir_entry(self, dir_entry):
         stat = dir_entry.stat(follow_symlinks=False)
-        self.max_atime = max(self.max_atime, stat.st_atime)
-        self.max_ctime = max(self.max_ctime, stat.st_ctime)
-        self.max_mtime = max(self.max_mtime, stat.st_mtime)
+        self.max_atime = max(self.max_atime, int(stat.st_atime))
+        self.max_ctime = max(self.max_ctime, int(stat.st_ctime))
+        self.max_mtime = max(self.max_mtime, int(stat.st_mtime))
         if dir_entry.is_file(follow_symlinks=False):
             self.num_blocks += round(stat.st_blocks / stat.st_nlink)
             self.num_bytes += round(stat.st_size / stat.st_nlink)
