@@ -3,13 +3,23 @@ cumulative statistics for each directory."""
 
 
 import os
+from pathlib import PurePath
+import time
 
 
 # The properties of a directory excluding its location (path & parent):
 ATTRIBUTES = (
+    ('depth', 0),
+    ('max_depth', 0),
+
+    ('scan_started', -1),
+    ('scan_finished', -1),
+    ('last_updated', -1),
+
     ('max_atime', -1),
     ('max_ctime', -1),
     ('max_mtime', -1),
+
     ('num_blocks', 0),
     ('num_bytes', 0),
     ('num_files', 0),
@@ -21,18 +31,23 @@ ATTRIBUTES = (
 
 
 class Directory:
-    def __init__(self, path, parent=None):
+    def __init__(self, path, parent=None, depth=None):
         self.path = path
-        if parent:
+        if parent is not None:
             self.parent = parent
-        elif parent == '/':
+        elif path == '/':
             self.parent = None
         else:
             self.parent = os.path.dirname(path) or None
+        if depth is not None:
+            self.depth = depth
+        else:
+            self.depth = len(PurePath(path).parents)
+        self.max_depth = self.depth
         self.clear()
 
     def clear(self):
-        for name, default in ATTRIBUTES:
+        for name, default in ATTRIBUTES[2:]:
             setattr(self, name, default)
 
     def __repr__(self):
@@ -42,12 +57,16 @@ class Directory:
         """Recursively scan this directory depth-first, updating totals and
         generating Directory instances yielding self last."""
         self.clear()
+        self.scan_started = int(time.time())
         for entry in os.scandir(self.path):
             self.add_dir_entry(entry)
             if entry.is_dir(follow_symlinks=False):
-                child_directory = Directory(entry.path, self.path)
+                child_directory = Directory(entry.path,
+                                            self.path,
+                                            self.depth + 1)
                 yield from child_directory.scan()
                 self.add_child_directory(child_directory)
+        self.scan_finished = self.last_updated = int(time.time())
         yield self
 
     def add_local_contents(self):
@@ -81,6 +100,7 @@ class Directory:
             self.num_specials += 1
 
     def add_child_directory(self, child_directory):
+        self.max_depth = max(self.max_depth, child_directory.max_depth)
         self.max_atime = max(self.max_atime, child_directory.max_atime)
         self.max_ctime = max(self.max_ctime, child_directory.max_ctime)
         self.max_mtime = max(self.max_mtime, child_directory.max_mtime)
