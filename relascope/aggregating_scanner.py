@@ -2,10 +2,13 @@
 cumulative statistics for each directory."""
 
 
+import logging
 import os
 from pathlib import PurePath
 import time
 
+
+logger = logging.getLogger(__name__)
 
 # The properties of a directory excluding its location (path & parent):
 ATTRIBUTES = (
@@ -27,6 +30,7 @@ ATTRIBUTES = (
     ('num_symlinks', 0),
     ('num_specials', 0),
     ('num_multi_links', 0),
+    ('num_exceptions', 0),
 )
 
 
@@ -58,14 +62,20 @@ class Directory:
         generating Directory instances yielding self last."""
         self.clear()
         self.scan_started = int(time.time())
-        for entry in os.scandir(self.path):
-            self.add_dir_entry(entry)
-            if entry.is_dir(follow_symlinks=False):
-                child_directory = Directory(entry.path,
-                                            self.path,
-                                            self.depth + 1)
-                yield from child_directory.scan()
-                self.add_child_directory(child_directory)
+        try:
+            generator = os.scandir(self.path)
+        except Exception as e:
+            logger.exception('unable to scan %r', self.path)
+            self.num_exceptions += 1
+        else:
+            for entry in generator:
+                self.add_dir_entry(entry)
+                if entry.is_dir(follow_symlinks=False):
+                    child_directory = Directory(entry.path,
+                                                self.path,
+                                                self.depth + 1)
+                    yield from child_directory.scan()
+                    self.add_child_directory(child_directory)
         self.scan_finished = self.last_updated = int(time.time())
         yield self
 
@@ -73,15 +83,28 @@ class Directory:
         """Refresh to only the local contents of this directory. Does not scan
         child directories. Returns list of immediate child directories."""
         self.clear()
+        # TODO: Too much overlap with scan().
         child_directory_paths = []
-        for entry in os.scandir(self.path):
-            self.add_dir_entry(entry)
-            if entry.is_dir(follow_symlinks=False):
-                child_directory_paths.append(entry.path)
+        try:
+            generator = os.scandir(self.path)
+        except Exception as e:
+            logger.exception('unable to scan %r', self.path)
+            self.num_exceptions += 1
+        else:
+            for entry in generator:
+                self.add_dir_entry(entry)
+                if entry.is_dir(follow_symlinks=False):
+                    child_directory_paths.append(entry.path)
         return child_directory_paths
 
     def add_dir_entry(self, dir_entry):
-        stat = dir_entry.stat(follow_symlinks=False)
+        try:
+            stat = dir_entry.stat(follow_symlinks=False)
+        except Exception as e:
+            logger.exception('unable to stat %r', dir_entry.path)
+            self.num_exceptions += 1
+        else:
+            pass
         self.max_atime = max(self.max_atime, int(stat.st_atime))
         self.max_ctime = max(self.max_ctime, int(stat.st_ctime))
         self.max_mtime = max(self.max_mtime, int(stat.st_mtime))
@@ -112,3 +135,5 @@ class Directory:
         self.num_specials = self.num_specials + child_directory.num_specials
         self.num_multi_links = (self.num_multi_links +
                                 child_directory.num_multi_links)
+        self.num_exceptions = (self.num_exceptions +
+                               child_directory.num_exceptions)
