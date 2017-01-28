@@ -17,6 +17,7 @@ ATTRIBUTES = (
 
     ('scan_started', -1),
     ('scan_finished', -1),
+
     ('last_updated', -1),
 
     ('max_atime', -1),
@@ -51,7 +52,7 @@ class Directory:
         self.clear()
 
     def clear(self):
-        for name, default in ATTRIBUTES[2:]:
+        for name, default in ATTRIBUTES[4:]:
             setattr(self, name, default)
 
     def __repr__(self):
