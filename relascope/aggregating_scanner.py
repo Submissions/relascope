@@ -63,29 +63,24 @@ class Directory:
         generating Directory instances yielding self last."""
         self.clear()
         self.scan_started = int(time.time())
-        try:
-            generator = os.scandir(self.path)
-        except Exception as e:
-            logger.exception('unable to scan %r', self.path)
-            self.num_exceptions += 1
-        else:
-            for entry in generator:
-                self.add_dir_entry(entry)
-                if entry.is_dir(follow_symlinks=False):
-                    child_directory = Directory(entry.path,
-                                                self.path,
-                                                self.depth + 1)
-                    yield from child_directory.scan()
-                    self.add_child_directory(child_directory)
+        for child_directory_path in self.generate_local_contents():
+            child_directory = Directory(child_directory_path,
+                                        self.path,
+                                        self.depth + 1)
+            yield from child_directory.scan()
+            self.add_child_directory(child_directory)
         self.scan_finished = self.last_updated = int(time.time())
         yield self
 
-    def add_local_contents(self):
+    def generate_local_contents(self):
         """Refresh to only the local contents of this directory. Does not scan
-        child directories. Returns list of immediate child directories."""
+        child directories; instead just generates the paths of the immediate
+        child directories. To quickly refresh a directory and obtain a list of
+        all child directories, run:
+
+            d = Directory('some_path')
+            child_directories = list(d.generate_local_contents())"""
         self.clear()
-        # TODO: Too much overlap with scan().
-        child_directory_paths = []
         try:
             generator = os.scandir(self.path)
         except Exception as e:
@@ -95,8 +90,7 @@ class Directory:
             for entry in generator:
                 self.add_dir_entry(entry)
                 if entry.is_dir(follow_symlinks=False):
-                    child_directory_paths.append(entry.path)
-        return child_directory_paths
+                    yield entry.path
 
     def add_dir_entry(self, dir_entry):
         try:
