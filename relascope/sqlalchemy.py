@@ -15,7 +15,8 @@ DEFAULT_BATCH_SIZE = 1000
 
 
 class SqlABackend(object):
-    """A backend for storing directory metrics using SQLAlchemy."""
+    """A backend for storing directory metrics using SQLAlchemy. Is a
+    context manager."""
     def __init__(self, sql_url, **kwds):
         super().__init__(**kwds)
         self._sql_url = sql_url
@@ -26,6 +27,14 @@ class SqlABackend(object):
         self.ensure_schema()
         self.Session = sessionmaker(bind=self._engine)
         self._session = self.Session()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        """Just invokes `close` method."""
+        self.close()
+        return False
 
     def _define_schema(self):
         attributes = [
