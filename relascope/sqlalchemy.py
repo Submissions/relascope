@@ -116,6 +116,7 @@ class SqlABackend(object):
             self._session.rollback()
             raise e
         return save
+        # TODO: exception handling semantics may not make sense here
 
     def delete_tree(self, top_directory_path):
         """Deletes top_directory_path and all descendants from database."""
