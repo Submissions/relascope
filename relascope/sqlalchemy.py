@@ -23,7 +23,6 @@ class SqlABackend(object):
         self._metadata = MetaData()
         self._define_schema()
         self._engine = create_engine(sql_url, echo=False)
-        self._insp = reflection.Inspector.from_engine(self._engine)
         self.ensure_schema()
         self.Session = sessionmaker(bind=self._engine)
         self._session = self.Session()
@@ -56,7 +55,8 @@ class SqlABackend(object):
 
     def ensure_schema(self):
         self._metadata.create_all(self._engine)
-        if 'dirs' not in self._insp.get_view_names():
+        insp = reflection.Inspector.from_engine(self._engine)
+        if 'dirs' not in insp.get_view_names():
             self._engine.execute("""
                 create view dirs as
                 select
@@ -84,9 +84,10 @@ class SqlABackend(object):
 
     def clear_schema(self):
         """Database go POOF!"""
-        if 'dirs' in self._insp.get_view_names():
+        insp = reflection.Inspector.from_engine(self._engine)
+        if 'dirs' in insp.get_view_names():
             self._engine.execute('drop view dirs')
-        if 'directories' in self._insp.get_table_names():
+        if 'directories' in insp.get_table_names():
             self._engine.execute('drop table directories')
 
     def add_tree(self, top, batch_size=DEFAULT_BATCH_SIZE):
