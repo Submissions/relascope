@@ -37,6 +37,7 @@ ATTRIBUTES = (
 
 class Directory:
     def __init__(self, path, parent=None, depth=None):
+        self.clear(0)
         self.path = path
         if parent is not None:
             self.parent = parent
@@ -49,10 +50,9 @@ class Directory:
         else:
             self.depth = len(PurePath(path).parents)
         self.max_depth = self.depth
-        self.clear()
 
-    def clear(self):
-        for name, default in ATTRIBUTES[4:]:
+    def clear(self, num_start=4):
+        for name, default in ATTRIBUTES[num_start:]:
             setattr(self, name, default)
 
     def __repr__(self):
