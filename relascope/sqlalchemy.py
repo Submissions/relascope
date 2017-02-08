@@ -109,16 +109,14 @@ class SqlABackend(object):
             raise e
         return save
 
-    def delete_tree(self, top):
+    def delete_tree(self, top_directory_path):
+        """Deletes top_directory_path and all descendants from database."""
         try:
-            delete_children = self._directories.delete(
-                self._directories.c.path.like(top + '/%')
-            )
-            delete_parent = self._directories.delete(
-                self._directories.c.path == top
-            )
-            self._session.execute(delete_children)
-            self._session.execute(delete_parent)
+            tree = self.query().filter(or_(
+                Directory.path == top_directory_path,
+                Directory.path.like(top_directory_path + '/%')
+            ))
+            num_deleted = tree.delete(False)
             self._session.commit()
         except Exception as e:
             self._session.rollback()
