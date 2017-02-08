@@ -3,6 +3,7 @@
 """Manages scan results in a database."""
 
 from itertools import islice
+import logging
 
 from sqlalchemy import MetaData, Table, Column, Integer, String, create_engine
 from sqlalchemy.orm import mapper, sessionmaker
@@ -12,6 +13,8 @@ from .aggregating_scanner import Directory, ATTRIBUTES
 
 
 DEFAULT_BATCH_SIZE = 1000
+
+logger = logging.getLogger(__name__)
 
 
 class SqlABackend(object):
@@ -95,6 +98,7 @@ class SqlABackend(object):
 
     def add_directory(self, top_directory, batch_size=DEFAULT_BATCH_SIZE):
         self.delete_tree(top_directory.path)
+        logger.info('add_directory: %s', top_directory)
         gen = top_directory.scan()
         try:
             while True:
@@ -115,6 +119,7 @@ class SqlABackend(object):
 
     def delete_tree(self, top_directory_path):
         """Deletes top_directory_path and all descendants from database."""
+        logger.info('delete_tree: %s', top_directory_path)
         try:
             tree = self.query().filter(or_(
                 Directory.path == top_directory_path,
