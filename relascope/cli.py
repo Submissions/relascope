@@ -48,8 +48,7 @@ def run(args):
     backend = SqlABackend('sqlite:///' + db_path)
     logger.info('starting')
     for root_dir in root_dirs:
-        backend.delete_tree(root_dir)
-        backend.add_tree(root_dir)
+        backend.hybrid_refresh(root_dir)
     logger.info('finished')
 
 

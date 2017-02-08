@@ -6,8 +6,10 @@ from itertools import islice
 import logging
 
 from sqlalchemy import MetaData, Table, Column, Integer, String, create_engine
-from sqlalchemy.orm import mapper, sessionmaker
 from sqlalchemy.engine import reflection
+from sqlalchemy.orm import mapper, sessionmaker
+from sqlalchemy.sql.expression import or_
+
 
 from .aggregating_scanner import Directory, ATTRIBUTES
 
@@ -92,6 +94,41 @@ class SqlABackend(object):
             self._engine.execute('drop view dirs')
         if 'directories' in insp.get_table_names():
             self._engine.execute('drop table directories')
+
+    def hybrid_refresh(self, directory):
+        """Refresh the Directory object by rescanning local directory contents
+        and combining the results with database results for immediate child
+        directories. Automatically: (1) scans and adds any new local
+        subdirectory trees and (2) deletes from the database any local
+        subdirectory trees that no longer exist."""
+        query = self.query()
+        if not isinstance(directory, Directory):
+            # Convert str to Directory
+            assert isinstance(directory, str), directory
+            obj = query.get(directory)
+            if not obj:
+                obj = Directory(directory)
+            directory = obj
+        immediate_children = query.filter(Directory.parent == directory.path)
+        children_index = {d.path: d for d in immediate_children}
+        for child_dir_path in directory.generate_local_contents():
+            if child_dir_path in children_index:
+                child_directory = children_index.pop(child_dir_path)
+            else:
+                # (1) Scan and add any new local subdirectories trees:
+                child_directory = self.add_tree(child_dir_path)
+            directory.add_child_directory(child_directory)
+        # (2) Delete from the database any local subdirectory trees that
+        # no longer exist:
+        for missing_path in sorted(children_index):
+            missing_tree_root = children_index.pop(missing_path)
+            assert missing_path == missing_tree_root.path, missing_path
+            self._session.delete(missing_tree_root)
+            self.delete_tree(missing_path)
+        # Finish up.
+        directory.set_last_updated()
+        self._session.merge(directory)
+        self._session.commit()
 
     def add_tree(self, top_path, batch_size=DEFAULT_BATCH_SIZE):
         return self.add_directory(Directory(top_path), batch_size)
