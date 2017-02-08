@@ -131,6 +131,7 @@ class SqlABackend(object):
         except Exception as e:
             self._session.rollback()
             raise e
+        return num_deleted
 
     def query(self):
         """Return an SQLAlchemy Query object."""
