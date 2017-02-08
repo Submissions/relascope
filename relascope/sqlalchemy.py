@@ -40,6 +40,11 @@ class SqlABackend(object):
         )
         self._directory_mapper = mapper(Directory, self._directories)
 
+    def hard_reset(self):
+        """Delete and re-create schema."""
+        self.clear_schema()
+        self.ensure_schema()
+
     def ensure_schema(self):
         self._metadata.create_all(self._engine)
         if 'dirs' not in self._insp.get_view_names():
