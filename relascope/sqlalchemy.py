@@ -90,20 +90,24 @@ class SqlABackend(object):
         if 'directories' in insp.get_table_names():
             self._engine.execute('drop table directories')
 
-    def add_tree(self, top, batch_size=DEFAULT_BATCH_SIZE):
-        gen = Directory(top).scan()
+    def add_tree(self, top_path, batch_size=DEFAULT_BATCH_SIZE):
+        return self.add_directory(Directory(top_path), batch_size)
+
+    def add_directory(self, top_directory, batch_size=DEFAULT_BATCH_SIZE):
+        self.delete_tree(top_directory.path)
+        gen = top_directory.scan()
         try:
             while True:
                 batch = list(islice(gen, batch_size))
                 if batch:
                     self._session.add_all(batch)
                     self._session.commit()
-                    # The top will be the last object in the last
+                    # The top_directory will be the last object in the last
                     # non-empty batch.
                     save = batch[-1]
                 else:
                     break
-            assert save.path == top, (save.path, top)
+            assert save == top_directory, (save.path, top_directory.path)
         except Exception as e:
             self._session.rollback()
             raise e
