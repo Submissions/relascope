@@ -62,14 +62,14 @@ class Directory:
         """Recursively scan this directory depth-first, updating totals and
         generating Directory instances yielding self last."""
         self.clear()
-        self.scan_started = int(time.time())
+        self.scan_started = self.set_last_updated()
         for child_directory_path in self.generate_local_contents():
             child_directory = Directory(child_directory_path,
                                         self.path,
                                         self.depth + 1)
             yield from child_directory.scan()
             self.add_child_directory(child_directory)
-        self.scan_finished = self.last_updated = int(time.time())
+        self.scan_finished = self.set_last_updated()
         yield self
 
     def generate_local_contents(self):
@@ -132,3 +132,8 @@ class Directory:
                                 child_directory.num_multi_links)
         self.num_exceptions = (self.num_exceptions +
                                child_directory.num_exceptions)
+
+    def set_last_updated(self):
+        """Set to now"""
+        result = self.last_updated = int(time.time())
+        return result
