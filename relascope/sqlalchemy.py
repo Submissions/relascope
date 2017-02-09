@@ -4,6 +4,7 @@
 
 from itertools import islice
 import logging
+import os
 
 from sqlalchemy import MetaData, Table, Column, Integer, String, create_engine
 from sqlalchemy.engine import reflection
@@ -97,20 +98,29 @@ class SqlABackend(object):
             self._engine.execute('drop table directories')
 
     def hybrid_refresh(self, directory):
+        """Refresh the specified directory in the database using
+        `local_hybrid_refresh` and then refresh each ancestor directory
+        that is in the database. The `directory` parameter can be either a
+        Directory instance or an str. Returns the highest ancestor Directory object
+        found in the database."""
+        result = None
+        current_directory = self.make_directory(directory)
+        while current_directory:
+            result = current_directory
+            self.local_hybrid_refresh(current_directory)
+            current_directory = self.fetch_parent(current_directory)
+        return result
+
+    def local_hybrid_refresh(self, directory):
         """Refresh the Directory object by rescanning local directory contents
         and combining the results with database results for immediate child
         directories. Automatically: (1) scans and adds any new local
         subdirectory trees and (2) deletes from the database any local
         subdirectory trees that no longer exist."""
-        query = self.query()
-        if not isinstance(directory, Directory):
-            # Convert str to Directory
-            assert isinstance(directory, str), directory
-            obj = query.get(directory)
-            if not obj:
-                obj = Directory(directory)
-            directory = obj
-        immediate_children = query.filter(Directory.parent == directory.path)
+        logger.info('refreshing %r', directory.path)
+        immediate_children = self.query().filter(
+            Directory.parent == directory.path
+        )
         children_index = {d.path: d for d in immediate_children}
         for child_dir_path in directory.generate_local_contents():
             if child_dir_path in children_index:
@@ -130,6 +140,22 @@ class SqlABackend(object):
         directory.set_last_updated()
         self._session.merge(directory)
         self._session.commit()
+
+    def make_directory(self, directory):
+        """Ensure that directory is of type Directory."""
+        result = directory
+        if not isinstance(directory, Directory):
+            # Convert str to Directory
+            assert isinstance(result, str), result
+            result = self.query().get(directory) or Directory(directory)
+        return result
+
+    def fetch_parent(self, directory):
+        """If the parent Directory object is not in the database, return
+        None, otherwise fetch the object from the database."""
+        parent = directory.parent
+        result = self.query().get(parent) if parent else None
+        return result
 
     def add_tree(self, top_path, batch_size=DEFAULT_BATCH_SIZE):
         return self.add_directory(Directory(top_path), batch_size)
