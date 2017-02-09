@@ -83,7 +83,8 @@ class SqlABackend(object):
                     num_dirs,
                     num_symlinks,
                     num_specials,
-                    num_multi_links
+                    num_multi_links,
+                    num_exceptions
                 from directories
             """)
 
