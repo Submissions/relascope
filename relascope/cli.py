@@ -6,6 +6,7 @@
 import argparse
 import logging
 import os
+import sys
 from time import localtime, strftime
 
 from .aggregating_scanner import Directory
@@ -20,7 +21,11 @@ def main():
     config_logging(args)
     logger.debug('args: %r', vars(args))
     args.backend = make_backend(args)
-    args.func(args)
+    try:
+        args.func(args)
+    except BrokenPipeError as e:
+        pass  # ignore
+    sys.stderr.close()
 
 
 def parse_args():
