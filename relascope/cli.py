@@ -48,6 +48,10 @@ def parse_args():
     parser_dump.add_argument('-m', '--max-depth', type=int)
     parser_dump.set_defaults(func=dump)
 
+    # create the parser for the "roots" command
+    parser_roots = subparsers.add_parser('roots', help='show top-level dirs')
+    parser_roots.set_defaults(func=roots)
+
     args = parser.parse_args()
     return args
 
@@ -81,6 +85,11 @@ def dump(args):
         filters.append(Directory.path.like(args.subtree + '/%'))
     if args.max_depth:
         filters.append(Directory.depth <= args.max_depth)
+    report(args, filters)
+
+
+def roots(args):
+    filters = [Directory.parent == None]
     report(args, filters)
 
 
