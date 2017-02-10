@@ -44,6 +44,8 @@ def parse_args():
 
     # create the parser for the "dump" command
     parser_dump = subparsers.add_parser('dump', help='dump to TSV')
+    parser_dump.add_argument('subtree', nargs='?', help='filter results')
+    parser_dump.add_argument('-m', '--max-depth', type=int)
     parser_dump.set_defaults(func=dump)
 
     args = parser.parse_args()
@@ -81,7 +83,15 @@ def dump(args):
         transforms[i] = format_date
     rules = list(zip(attributes, transforms))
     print('kb', *attributes, sep='\t')
-    for d in args.backend.query().order_by(True):
+    query = args.backend.query()
+    filters = list()
+    if args.subtree:
+        filters.append(Directory.path.like(args.subtree + '/%'))
+    if args.max_depth:
+        filters.append(Directory.depth <= args.max_depth)
+    if filters:
+        query = query.filter(*filters)
+    for d in query.order_by(True):
         kb = d.num_blocks // 2
         row = [t(getattr(d, a)) for a, t in rules]
         print(kb, *row, sep='\t')
