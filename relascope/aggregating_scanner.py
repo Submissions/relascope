@@ -29,8 +29,8 @@ ATTRIBUTES = (
     ('num_files', 0),
     ('num_dirs', 0),
     ('num_symlinks', 0),
-    ('num_specials', 0),
     ('num_multi_links', 0),
+    ('num_specials', 0),
     ('num_exceptions', 0),
 )
 
