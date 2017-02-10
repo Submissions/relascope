@@ -76,6 +76,16 @@ def scan(args):
 
 
 def dump(args):
+    filters = list()
+    if args.subtree:
+        filters.append(Directory.path.like(args.subtree + '/%'))
+    if args.max_depth:
+        filters.append(Directory.depth <= args.max_depth)
+    report(args, filters)
+
+
+def report(args, filters):
+    """output a TSV report"""
     attributes = ['path', 'parent']
     attributes.extend(a for a, d in ATTRIBUTES)
     transforms = [str] * len(attributes)
@@ -84,11 +94,6 @@ def dump(args):
     rules = list(zip(attributes, transforms))
     print('kb', *attributes, sep='\t')
     query = args.backend.query()
-    filters = list()
-    if args.subtree:
-        filters.append(Directory.path.like(args.subtree + '/%'))
-    if args.max_depth:
-        filters.append(Directory.depth <= args.max_depth)
     if filters:
         query = query.filter(*filters)
     for d in query.order_by(True):
