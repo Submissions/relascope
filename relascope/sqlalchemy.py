@@ -104,7 +104,11 @@ class SqlABackend(object):
         Directory instance or an str. Returns the highest ancestor Directory object
         found in the database."""
         result = None
-        current_directory = self.make_directory(top_path)
+        current_directory = top_path
+        if not isinstance(top_path, Directory):
+            # Convert str to Directory
+            assert isinstance(current_directory, str), current_directory
+            current_directory = self.query().get(top_path) or Directory(top_path)
         while current_directory:
             result = current_directory
             self.local_hybrid_refresh(current_directory)
@@ -140,15 +144,6 @@ class SqlABackend(object):
         directory.set_last_updated()
         self._session.merge(directory)
         self._session.commit()
-
-    def make_directory(self, directory):
-        """Ensure that directory is of type Directory."""
-        result = directory
-        if not isinstance(directory, Directory):
-            # Convert str to Directory
-            assert isinstance(result, str), result
-            result = self.query().get(directory) or Directory(directory)
-        return result
 
     def fetch_parent(self, directory):
         """If the parent Directory object is not in the database, return
