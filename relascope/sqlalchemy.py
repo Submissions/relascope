@@ -162,16 +162,11 @@ class SqlABackend(object):
                 if batch:
                     self._session.add_all(batch)
                     self._session.commit()
-                    # The top_directory will be the last object in the last
-                    # non-empty batch.
-                    save = batch[-1]
                 else:
                     break
-            assert save == top_directory, (save.path, top_directory.path)
         except Exception as e:
             self._session.rollback()
             raise e
-        return save
         # TODO: exception handling semantics may not make sense here
 
     def delete_tree(self, top_directory_path):
