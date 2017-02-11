@@ -100,15 +100,12 @@ class SqlABackend(object):
     def hybrid_refresh(self, top_path):
         """Refresh the specified directory in the database using
         `local_hybrid_refresh` and then refresh each ancestor directory
-        that is in the database. The `top_path` parameter can be either a
-        Directory instance or an str. Returns the highest ancestor Directory object
+        that is in the database. Returns the highest ancestor Directory object
         found in the database."""
+        assert isinstance(top_path, str), top_path
         result = None
-        current_directory = top_path
-        if not isinstance(top_path, Directory):
-            # Convert str to Directory
-            assert isinstance(current_directory, str), current_directory
-            current_directory = self.query().get(top_path) or Directory(top_path)
+        # Convert str to Directory
+        current_directory = self.query().get(top_path) or Directory(top_path)
         while current_directory:
             result = current_directory
             self.local_hybrid_refresh(current_directory)
