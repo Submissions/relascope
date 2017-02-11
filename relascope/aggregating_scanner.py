@@ -11,27 +11,45 @@ import time
 logger = logging.getLogger(__name__)
 
 # The properties of a directory excluding its location (path & parent):
-ATTRIBUTES = (
-    ('depth', 0),
-    ('max_depth', 0),
 
-    ('scan_started', -1),
-    ('scan_finished', -1),
+# name            code  semantics
+MODEL_STR = '''
+tb                t     synthetic
+gb                g     synthetic
+mb                m     synthetic
+path              a     path
+parent            A     path
+depth             p     depth
+max_depth         P     depth
+scan_started      s     timestamp
+scan_finished     f     timestamp
+last_updated      u     timestamp
+max_atime         a     timestamp
+max_ctime         c     timestamp
+max_mtime         m     timestamp
+num_blocks        B     count
+num_bytes         b     count
+num_files         f     count
+num_dirs          d     count
+num_symlinks      l     count
+num_multi_links   L     count
+num_specials      S     count
+num_exceptions    E     count
+'''
 
-    ('last_updated', -1),
+# (name, code, semantics) for each attribute
+MODEL = tuple(tuple(l.split()) for l in MODEL_STR.splitlines() if l)
 
-    ('max_atime', -1),
-    ('max_ctime', -1),
-    ('max_mtime', -1),
+DEFAULT_MAP = dict(
+    synthetic=None,
+    path=None,
+    depth=None,
+    timestamp=-1,
+    count=0
+)
 
-    ('num_blocks', 0),
-    ('num_bytes', 0),
-    ('num_files', 0),
-    ('num_dirs', 0),
-    ('num_symlinks', 0),
-    ('num_multi_links', 0),
-    ('num_specials', 0),
-    ('num_exceptions', 0),
+ATTRIBUTES = tuple(
+    (name, DEFAULT_MAP[semantics]) for name, code, semantics in MODEL[7:]
 )
 
 
@@ -39,12 +57,7 @@ class Directory:
     def __init__(self, path, parent=None, depth=None):
         self.clear(0)
         self.path = path
-        if parent is not None:
-            self.parent = parent
-        elif path == '/':
-            self.parent = None
-        else:
-            self.parent = os.path.dirname(path) or None
+        self.parent = parent
         if depth is not None:
             self.depth = depth
         else:
