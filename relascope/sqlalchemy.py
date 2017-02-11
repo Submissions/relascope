@@ -128,7 +128,10 @@ class SqlABackend(object):
                 child_directory = children_index.pop(child_dir_path)
             else:
                 # (1) Scan and add any new local subdirectories trees:
-                child_directory = self.add_tree(child_dir_path)
+                child_directory = Directory(child_dir_path,
+                                            directory.path,
+                                            directory.depth + 1)
+                self.add_directory(child_directory)
             directory.add_child_directory(child_directory)
         # (2) Delete from the database any local subdirectory trees that
         # no longer exist:
