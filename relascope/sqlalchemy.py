@@ -152,9 +152,6 @@ class SqlABackend(object):
         result = self.query().get(parent) if parent else None
         return result
 
-    def add_tree(self, top_path, batch_size=DEFAULT_BATCH_SIZE):
-        return self.add_directory(Directory(top_path), batch_size)
-
     def add_directory(self, top_directory, batch_size=DEFAULT_BATCH_SIZE):
         self.delete_tree(top_directory.path)
         logger.info('add_directory: %s', top_directory)
