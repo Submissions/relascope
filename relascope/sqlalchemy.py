@@ -97,14 +97,14 @@ class SqlABackend(object):
         if 'directories' in insp.get_table_names():
             self._engine.execute('drop table directories')
 
-    def hybrid_refresh(self, directory):
+    def hybrid_refresh(self, top_path):
         """Refresh the specified directory in the database using
         `local_hybrid_refresh` and then refresh each ancestor directory
-        that is in the database. The `directory` parameter can be either a
+        that is in the database. The `top_path` parameter can be either a
         Directory instance or an str. Returns the highest ancestor Directory object
         found in the database."""
         result = None
-        current_directory = self.make_directory(directory)
+        current_directory = self.make_directory(top_path)
         while current_directory:
             result = current_directory
             self.local_hybrid_refresh(current_directory)
