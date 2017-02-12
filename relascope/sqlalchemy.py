@@ -12,7 +12,7 @@ from sqlalchemy.orm import mapper, sessionmaker
 from sqlalchemy.sql.expression import or_
 
 
-from .aggregating_scanner import Directory, ATTRIBUTES
+from .aggregating_scanner import Directory, MODEL
 
 
 DEFAULT_BATCH_SIZE = 1000
@@ -44,7 +44,8 @@ class SqlABackend(object):
     def _define_schema(self):
         attributes = [
             Column(name, Integer, default=default)
-            for name, default in ATTRIBUTES
+            for name, _, semantics, default in MODEL
+            if semantics in ('depth', 'timestamp', 'count')
         ]
         self._directories = Table(
             'directories', self._metadata,

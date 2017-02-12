@@ -10,7 +10,7 @@ import sys
 from time import localtime, strftime
 
 from .aggregating_scanner import Directory
-from .sqlalchemy import SqlABackend, ATTRIBUTES
+from .sqlalchemy import SqlABackend, MODEL
 
 
 logger = logging.getLogger(__name__)  # used if file imported as module
@@ -95,10 +95,10 @@ def roots(args):
 
 def report(args, filters):
     """output a TSV report"""
-    attributes = ['path', 'parent']
-    attributes.extend(a for a, d in ATTRIBUTES)
+    attributes = [name for name, code, semantics, default in MODEL
+                  if semantics != 'synthetic']
     transforms = [str] * len(attributes)
-    for i in range(4, 10):
+    for i in range(4, 10):  # TODO: better linkage to MODEL
         transforms[i] = format_date
     rules = list(zip(attributes, transforms))
     print('kb', *attributes, sep='\t')
